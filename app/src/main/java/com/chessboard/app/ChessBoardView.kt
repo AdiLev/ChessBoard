@@ -64,6 +64,52 @@ class ChessBoardView @JvmOverloads constructor(
         textAlign = Paint.Align.CENTER
         isAntiAlias = true
         color = Color.WHITE
+        style = Paint.Style.FILL
+    }
+    
+    private val whitePieceOutlinePaint = Paint().apply {
+        textAlign = Paint.Align.CENTER
+        isAntiAlias = true
+        color = Color.parseColor("#808080") // Gray color for outlines/details
+        style = Paint.Style.FILL
+    }
+    
+    private val whitePieceDetailPaint = Paint().apply {
+        textAlign = Paint.Align.CENTER
+        isAntiAlias = true
+        color = Color.parseColor("#808080") // Gray color for details
+        style = Paint.Style.FILL
+    }
+    
+    /**
+     * Draws a white piece with gray outline/details and white fill
+     */
+    private fun drawWhitePiece(canvas: Canvas, symbol: String, x: Float, y: Float, isKnight: Boolean = false) {
+        val outlineOffset = whitePiecePaint.textSize * 0.03f // Small offset for outline
+        
+        // For knight, draw details in gray first
+        if (isKnight) {
+            canvas.drawText(symbol, x, y, whitePieceDetailPaint)
+        }
+        
+        // Draw gray outline by drawing text with small offsets in 8 directions
+        val offsets = arrayOf(
+            -outlineOffset to 0f,      // left
+            outlineOffset to 0f,       // right
+            0f to -outlineOffset,      // top
+            0f to outlineOffset,       // bottom
+            -outlineOffset to -outlineOffset, // top-left
+            outlineOffset to -outlineOffset,   // top-right
+            -outlineOffset to outlineOffset,  // bottom-left
+            outlineOffset to outlineOffset      // bottom-right
+        )
+        
+        for ((dx, dy) in offsets) {
+            canvas.drawText(symbol, x + dx, y + dy, whitePieceOutlinePaint)
+        }
+        
+        // Draw white fill on top
+        canvas.drawText(symbol, x, y, whitePiecePaint)
     }
     
     private val blackPiecePaint = Paint().apply {
@@ -100,11 +146,18 @@ class ChessBoardView @JvmOverloads constructor(
 
     fun setSelectedSquare(square: Square?) {
         selectedSquare = square
+        // Clear castling highlight when setting a new selection
+        castlingKingSquare = null
         invalidate()
     }
 
     fun setPossibleMoves(moves: List<Square>) {
         possibleMoves = moves.toMutableList()
+        invalidate()
+    }
+    
+    fun clearCastlingHighlight() {
+        castlingKingSquare = null
         invalidate()
     }
 
@@ -154,6 +207,8 @@ class ChessBoardView @JvmOverloads constructor(
         val textSize = squareSize * 0.7f
         piecePaint.textSize = textSize
         whitePiecePaint.textSize = textSize
+        whitePieceOutlinePaint.textSize = textSize
+        whitePieceDetailPaint.textSize = textSize
         blackPiecePaint.textSize = textSize
         selectedPiecePaint.textSize = textSize
     }
@@ -198,21 +253,34 @@ class ChessBoardView @JvmOverloads constructor(
                         val radius = squareSize * 0.45f
                         canvas.drawCircle(x, y - piecePaint.textSize / 3, radius, selectedPieceBackgroundPaint)
                         // Draw piece in gold color with stroke for better visibility
-                        selectedPiecePaint.style = Paint.Style.FILL_AND_STROKE
-                        selectedPiecePaint.strokeWidth = 3f
-                        selectedPiecePaint.color = Color.parseColor("#FFD700") // Gold
-                        canvas.drawText(piece.getUnicodeSymbol(), x, y, selectedPiecePaint)
+                        if (piece.color == PieceColor.WHITE) {
+                            // Draw white piece with gray outline/details and white fill even when selected
+                            drawWhitePiece(canvas, piece.getUnicodeSymbol(), x, y, piece.type == PieceType.KNIGHT)
+                        } else {
+                            selectedPiecePaint.style = Paint.Style.FILL_AND_STROKE
+                            selectedPiecePaint.strokeWidth = 3f
+                            selectedPiecePaint.color = Color.parseColor("#FFD700") // Gold
+                            canvas.drawText(piece.getUnicodeSymbol(), x, y, selectedPiecePaint)
+                        }
                     } else if (castlingKingSquare?.row == row && castlingKingSquare?.col == col) {
                         // Highlight king when rook is selected for castling
                         val radius = squareSize * 0.45f
                         canvas.drawCircle(x, y - piecePaint.textSize / 3, radius, selectedPieceBackgroundPaint)
                         // Draw piece with highlight color
-                        val paint = if (piece.color == PieceColor.WHITE) whitePiecePaint else blackPiecePaint
-                        canvas.drawText(piece.getUnicodeSymbol(), x, y, paint)
+                        if (piece.color == PieceColor.WHITE) {
+                            // Draw white piece with gray outline/details and white fill
+                            drawWhitePiece(canvas, piece.getUnicodeSymbol(), x, y, piece.type == PieceType.KNIGHT)
+                        } else {
+                            canvas.drawText(piece.getUnicodeSymbol(), x, y, blackPiecePaint)
+                        }
                     } else {
                         // Draw piece normally with appropriate color
-                        val paint = if (piece.color == PieceColor.WHITE) whitePiecePaint else blackPiecePaint
-                        canvas.drawText(piece.getUnicodeSymbol(), x, y, paint)
+                        if (piece.color == PieceColor.WHITE) {
+                            // Draw white piece with gray outline/details and white fill
+                            drawWhitePiece(canvas, piece.getUnicodeSymbol(), x, y, piece.type == PieceType.KNIGHT)
+                        } else {
+                            canvas.drawText(piece.getUnicodeSymbol(), x, y, blackPiecePaint)
+                        }
                     }
                 }
             }

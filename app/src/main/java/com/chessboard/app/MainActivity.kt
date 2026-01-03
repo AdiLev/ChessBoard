@@ -133,8 +133,18 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("No") { _, _ ->
-                // User declined castling - clear selection and allow normal moves
-                chessBoardView.clearSelection()
+                // User declined castling - restore rook selection and enable normal moves
+                if (rookSquare != null) {
+                    // Clear castling highlight first
+                    chessBoardView.clearCastlingHighlight()
+                    // Restore rook selection - this will automatically calculate and show all valid moves
+                    chessBoardView.setSelectedSquare(rookSquare)
+                    // Get all valid moves for the rook (user can move it normally now)
+                    val allMoves = game.getValidMovesForPiece(rookSquare)
+                    chessBoardView.setPossibleMoves(allMoves)
+                } else {
+                    chessBoardView.clearSelection()
+                }
             }
             .setCancelable(true)
             .setOnCancelListener {
