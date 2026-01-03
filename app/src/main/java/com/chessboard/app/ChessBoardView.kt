@@ -19,6 +19,7 @@ class ChessBoardView @JvmOverloads constructor(
     init {
         isClickable = true
         isFocusable = true
+        isEnabled = true
     }
 
     private var boardSize = 0
@@ -208,44 +209,64 @@ class ChessBoardView @JvmOverloads constructor(
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (!isEnabled) return false
+        
+        // Account for padding when calculating touch coordinates
+        val touchX = event.x - paddingLeft
+        val touchY = event.y - paddingTop
+        
+        val col = (touchX / squareSize).toInt()
+        val row = (touchY / squareSize).toInt()
+
+        // Only handle touches within board bounds
+        if (row !in 0..7 || col !in 0..7) {
+            return false // Let parent handle touches outside board
+        }
+
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                performClick()
-                // Account for padding when calculating touch coordinates
-                val touchX = event.x - paddingLeft
-                val touchY = event.y - paddingTop
-                
-                val col = (touchX / squareSize).toInt()
-                val row = (touchY / squareSize).toInt()
+                val square = Square(row, col)
 
-                if (row in 0..7 && col in 0..7) {
-                    val square = Square(row, col)
-
-                    if (selectedSquare == null) {
-                        // Select a piece
-                        val piece = game?.getPieceAt(row, col)
-                        if (piece != null) {
-                            selectedSquare = square
-                            // Calculate possible moves (simplified - show all empty squares for now)
-                            possibleMoves = (0..7).flatMap { r ->
-                                (0..7).map { c -> Square(r, c) }
-                            }.filter { game?.getPieceAt(it.row, it.col) == null }.toMutableList()
-                            invalidate()
-                        }
+                if (selectedSquare == null) {
+                    // Select a piece
+                    val piece = game?.getPieceAt(row, col)
+                    if (piece != null) {
+                        selectedSquare = square
+                        // Calculate valid moves for this piece
+                        possibleMoves = game?.getValidMovesForPiece(square)?.toMutableList() ?: mutableListOf()
+                        invalidate()
+                        performClick()
+                        return true
+                    }
+                } else {
+                    // Try to make a move
+                    if (selectedSquare != square) {
+                        // Pass a callback to know if move succeeded
+                        onMoveListener?.invoke(selectedSquare!!, square)
+                        performClick()
+                        return true
                     } else {
-                        // Try to make a move
-                        if (selectedSquare != square) {
-                            onMoveListener?.invoke(selectedSquare!!, square)
-                        }
+                        // Clicked same square - deselect
                         selectedSquare = null
                         possibleMoves.clear()
                         invalidate()
+                        performClick()
+                        return true
                     }
                 }
+            }
+            MotionEvent.ACTION_UP -> {
+                performClick()
                 return true
             }
         }
         return super.onTouchEvent(event)
+    }
+    
+    fun clearSelection() {
+        selectedSquare = null
+        possibleMoves.clear()
+        invalidate()
     }
 
     override fun performClick(): Boolean {

@@ -11,9 +11,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:gravity="center"
-        android:padding="@dimen/spacing_small"
-        android:clickable="false"
-        android:focusable="false">
+        android:padding="@dimen/spacing_small">
         
         <com.chessboard.app.ChessBoardView
             android:id="@+id/chessBoardView"
@@ -21,10 +19,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:minWidth="200dp"
-            android:minHeight="200dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:focusableInTouchMode="true" />
+            android:minHeight="200dp" />
     </FrameLayout>
 
     <LinearLayout
@@ -93,7 +88,8 @@
             android:paddingEnd="@dimen/spacing_large"
             android:textSize="@dimen/text_size_medium"
             android:clickable="true"
-            android:focusable="true" />
+            android:focusable="true"
+            android:enabled="true" />
 
         <Button
             android:id="@+id/btnFirst"
@@ -131,14 +127,15 @@
             android:layout_height="@dimen/button_height"
             android:layout_weight="1"
             android:minWidth="@dimen/button_min_width"
-            android:drawableTop="@drawable/ic_pause"
+            android:drawableTop="@drawable/ic_play"
             android:drawablePadding="@dimen/spacing_small"
             android:text=""
             android:backgroundTint="#FF9800"
             android:layout_marginEnd="@dimen/button_margin"
-            android:contentDescription="Pause/Resume"
+            android:contentDescription="Play/Pause autoplay"
             android:clickable="true"
-            android:focusable="true" />
+            android:focusable="true"
+            android:visibility="visible" />
 
         <Button
             android:id="@+id/btnNext"

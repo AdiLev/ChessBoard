@@ -1,5 +1,6 @@
 package com.chessboard.app
 
+import android.media.ToneGenerator
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -25,6 +26,7 @@ class MainActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private var autoPlayRunnable: Runnable? = null
     private var isSeeking = false
+    private val toneGenerator = ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 100)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +36,9 @@ class MainActivity : AppCompatActivity() {
         setupChessBoard()
         setupControls()
         updateUI()
+        
+        // Initialize autoplay as paused (showing play icon)
+        game.pause()
     }
 
     private fun initializeViews() {
@@ -48,6 +53,15 @@ class MainActivity : AppCompatActivity() {
         btnNext = findViewById(R.id.btnNext)
         btnLast = findViewById(R.id.btnLast)
         btnNewGame = findViewById(R.id.btnNewGame)
+        
+        // Ensure all buttons are enabled and clickable
+        btnNewGame.isEnabled = true
+        btnFirst.isEnabled = true
+        btnPrevious.isEnabled = true
+        btnPauseResume.isEnabled = true
+        btnNext.isEnabled = true
+        btnLast.isEnabled = true
+        chessBoardView.isEnabled = true
     }
 
     private fun setupChessBoard() {
@@ -55,13 +69,18 @@ class MainActivity : AppCompatActivity() {
         chessBoardView.onMoveListener = { from, to ->
             when (val result = game.makeMove(from, to)) {
                 is MoveResult.Success -> {
+                    // Clear selection after successful move
+                    chessBoardView.clearSelection()
                     updateUI()
                 }
                 is MoveResult.PromotionRequired -> {
+                    // Keep selection for promotion
                     showPromotionDialog(result.from, result.to, result.piece)
                 }
                 is MoveResult.Invalid -> {
-                    // Move was invalid, do nothing
+                    // Play beep sound for illegal move
+                    toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 200)
+                    // Keep selection so user can try another move
                 }
             }
         }
@@ -90,10 +109,13 @@ class MainActivity : AppCompatActivity() {
                 // Complete the promotion
                 when (val result = game.completePromotion(from, to, promotionType)) {
                     is MoveResult.Success -> {
+                        // Clear selection after successful promotion
+                        chessBoardView.clearSelection()
                         updateUI()
                     }
                     else -> {
                         // Handle error - promotion failed
+                        toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 200)
                     }
                 }
             },
@@ -128,24 +150,28 @@ class MainActivity : AppCompatActivity() {
         // Navigation buttons
         btnFirst.setOnClickListener {
             pauseAutoPlay()
+            chessBoardView.clearSelection()
             game.goToFirstMove()
             updateUI()
         }
 
         btnPrevious.setOnClickListener {
             pauseAutoPlay()
+            chessBoardView.clearSelection()
             game.goToPreviousMove()
             updateUI()
         }
 
         btnNext.setOnClickListener {
             pauseAutoPlay()
+            chessBoardView.clearSelection()
             game.goToNextMove()
             updateUI()
         }
 
         btnLast.setOnClickListener {
             pauseAutoPlay()
+            chessBoardView.clearSelection()
             game.goToLastMove()
             updateUI()
         }
@@ -162,6 +188,7 @@ class MainActivity : AppCompatActivity() {
         // New Game button
         btnNewGame.setOnClickListener {
             pauseAutoPlay()
+            chessBoardView.clearSelection()
             game.newGame()
             updateUI()
         }
@@ -239,6 +266,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         pauseAutoPlay()
+        toneGenerator.release()
     }
 }
 

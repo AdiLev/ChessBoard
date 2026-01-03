@@ -90,7 +90,8 @@ class ChessGame {
     }
 
     fun makeMove(from: Square, to: Square): MoveResult {
-        if (isPaused || isAutoPlaying) return MoveResult.Invalid
+        // Allow moves when not auto-playing (pause state doesn't block manual moves)
+        if (isAutoPlaying) return MoveResult.Invalid
         if (!from.isValid() || !to.isValid()) return MoveResult.Invalid
 
         val piece = board[from.row][from.col] ?: return MoveResult.Invalid
@@ -616,6 +617,22 @@ class ChessGame {
     fun getCurrentMoveIndex(): Int = currentMoveIndex
 
     fun getTotalMoves(): Int = moveHistory.size
+    
+    fun getValidMovesForPiece(from: Square): List<Square> {
+        val piece = board[from.row][from.col] ?: return emptyList()
+        if ((piece.color == PieceColor.WHITE) != isWhiteTurn) return emptyList()
+        
+        val validMoves = mutableListOf<Square>()
+        for (row in 0..7) {
+            for (col in 0..7) {
+                val to = Square(row, col)
+                if (from != to && isValidMove(piece, from, to)) {
+                    validMoves.add(to)
+                }
+            }
+        }
+        return validMoves
+    }
 
     fun goToMove(index: Int) {
         if (index < -1 || index >= moveHistory.size) return
