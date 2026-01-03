@@ -4,6 +4,7 @@ package com.chessboard.app
 sealed class MoveResult {
     data class Success(val move: ChessMove) : MoveResult()
     data class PromotionRequired(val from: Square, val to: Square, val piece: ChessPiece) : MoveResult()
+    data class CastlingConfirmationRequired(val from: Square, val to: Square, val piece: ChessPiece, val isKingside: Boolean) : MoveResult()
     object Invalid : MoveResult()
 }
 
@@ -97,16 +98,26 @@ class ChessGame {
         val piece = board[from.row][from.col] ?: return MoveResult.Invalid
         if ((piece.color == PieceColor.WHITE) != isWhiteTurn) return MoveResult.Invalid
 
-        // Check for castling (only if king is on starting square and moving 2 squares)
+        // Check for castling FIRST (before normal move validation)
+        // Castling is an exception: king moves 2 squares, which is not a normal king move
+        // Ask for confirmation before executing castling
         if (piece.type == PieceType.KING) {
-            val castlingResult = checkAndExecuteCastling(piece, from, to)
-            if (castlingResult != null) {
-                // Castling move executed - flags are set in executeKingside/QueensideCastling
-                return castlingResult
+            val castlingCheck = checkCastlingPossible(piece, from, to)
+            if (castlingCheck != null) {
+                // Return confirmation required instead of executing directly
+                return MoveResult.CastlingConfirmationRequired(from, to, piece, castlingCheck)
+            }
+        } else if (piece.type == PieceType.ROOK) {
+            // Check if rook is initiating castling by selecting castling destination
+            val castlingCheck = checkCastlingFromRookPossible(piece, from, to)
+            if (castlingCheck != null) {
+                // Return confirmation required instead of executing directly
+                return MoveResult.CastlingConfirmationRequired(castlingCheck.kingFrom, castlingCheck.kingTo, castlingCheck.king, castlingCheck.isKingside)
             }
         }
 
         // Basic move validation (allows king to move on any row, including 0 and 7)
+        // Note: Castling moves are handled above, so they won't reach this validation
         if (!isValidMove(piece, from, to)) return MoveResult.Invalid
 
         val capturedPiece = board[to.row][to.col]
@@ -430,7 +441,7 @@ class ChessGame {
         return true
     }
     
-    private fun checkAndExecuteCastling(piece: ChessPiece, from: Square, to: Square): MoveResult? {
+    private fun checkCastlingPossible(piece: ChessPiece, from: Square, to: Square): Boolean? {
         if (piece.type != PieceType.KING) return null
         
         val isWhite = piece.color == PieceColor.WHITE
@@ -441,15 +452,128 @@ class ChessGame {
         
         // Check for kingside castling (O-O): king moves 2 squares right
         if (to.row == kingRow && to.col == 6) {
-            return executeKingsideCastling(piece, from, to)
+            return if (isCastlingPossible(piece, true)) true else null
         }
         
         // Check for queenside castling (O-O-O): king moves 2 squares left
         if (to.row == kingRow && to.col == 2) {
-            return executeQueensideCastling(piece, from, to)
+            return if (isCastlingPossible(piece, false)) false else null
         }
         
         return null
+    }
+    
+    // Helper class for castling information
+    private data class CastlingInfo(val kingFrom: Square, val kingTo: Square, val king: ChessPiece, val isKingside: Boolean)
+    
+    private fun checkCastlingFromRookPossible(rook: ChessPiece, rookFrom: Square, to: Square): CastlingInfo? {
+        val isWhite = rook.color == PieceColor.WHITE
+        val kingRow = if (isWhite) 7 else 0
+        
+        // Rook must be on back rank
+        if (rookFrom.row != kingRow) return null
+        
+        // Find the king
+        val kingSquare = Square(kingRow, 4)
+        val king = board[kingSquare.row][kingSquare.col]
+        if (king == null || king.type != PieceType.KING || king.color != rook.color) {
+            return null
+        }
+        
+        // Check if this is a castling move destination
+        // Kingside castling: rook is on h1/h8 (col 7), tap g1/g8 (col 6) to castle
+        if (rookFrom.col == 7 && to.row == kingRow && to.col == 6) {
+            // Check if castling is possible
+            if (isCastlingPossible(king, true)) {
+                return CastlingInfo(kingSquare, Square(kingRow, 6), king, true)
+            }
+        }
+        
+        // Queenside castling: rook is on a1/a8 (col 0), tap a1/a8 (col 0) to castle
+        // User selects rook and taps the rook's square to execute queenside castling
+        if (rookFrom.col == 0 && to.row == kingRow && to.col == 0 && rookFrom != to) {
+            // Check if castling is possible
+            if (isCastlingPossible(king, false)) {
+                return CastlingInfo(kingSquare, Square(kingRow, 2), king, false)
+            }
+        }
+        
+        return null
+    }
+    
+    // Execute castling after confirmation
+    fun executeCastling(from: Square, to: Square, isKingside: Boolean): MoveResult {
+        val piece = board[from.row][from.col] ?: return MoveResult.Invalid
+        if (piece.type != PieceType.KING) return MoveResult.Invalid
+        
+        return if (isKingside) {
+            executeKingsideCastling(piece, from, to) ?: MoveResult.Invalid
+        } else {
+            executeQueensideCastling(piece, from, to) ?: MoveResult.Invalid
+        }
+    }
+    
+    // Try normal move validation (used when castling is declined)
+    fun tryNormalMove(from: Square, to: Square): MoveResult {
+        // Allow moves when not auto-playing (pause state doesn't block manual moves)
+        if (isAutoPlaying) return MoveResult.Invalid
+        if (!from.isValid() || !to.isValid()) return MoveResult.Invalid
+
+        val piece = board[from.row][from.col] ?: return MoveResult.Invalid
+        if ((piece.color == PieceColor.WHITE) != isWhiteTurn) return MoveResult.Invalid
+
+        // Skip castling check - just validate as normal move
+        if (!isValidMove(piece, from, to)) return MoveResult.Invalid
+
+        val capturedPiece = board[to.row][to.col]
+        
+        // Check if this is a pawn promotion
+        val isPromotion = piece.type == PieceType.PAWN && 
+                         ((piece.color == PieceColor.WHITE && to.row == 0) || 
+                          (piece.color == PieceColor.BLACK && to.row == 7))
+        
+        if (isPromotion) {
+            // Return promotion required result
+            return MoveResult.PromotionRequired(from, to, piece)
+        }
+        
+        // Track king and rook moves for castling eligibility
+        // Any king move (including on rows 0 and 7) will disable castling
+        trackPieceMovement(piece, from)
+        
+        // Add captured piece to the appropriate list
+        if (capturedPiece != null) {
+            if (capturedPiece.color == PieceColor.WHITE) {
+                whiteCapturedPieces.add(capturedPiece)
+            } else {
+                blackCapturedPieces.add(capturedPiece)
+            }
+        }
+        
+        board[to.row][to.col] = piece
+        board[from.row][from.col] = null
+
+        val move = ChessMove(
+            from = from,
+            to = to,
+            piece = piece,
+            capturedPiece = capturedPiece,
+            isPromotion = false,
+            promotionType = null,
+            isCastling = false,
+            moveNumber = moveHistory.size + 1
+        )
+
+        // Remove moves after current index if we're in the middle of history
+        if (currentMoveIndex < moveHistory.size - 1) {
+            moveHistory.subList(currentMoveIndex + 1, moveHistory.size).clear()
+        }
+
+        moveHistory.add(move)
+        currentMoveIndex = moveHistory.size - 1
+        isWhiteTurn = !isWhiteTurn
+
+        return MoveResult.Success(move)
     }
     
     private fun executeKingsideCastling(piece: ChessPiece, from: Square, to: Square): MoveResult? {
@@ -703,15 +827,8 @@ class ChessGame {
         if ((piece.color == PieceColor.WHITE) != isWhiteTurn) return emptyList()
         
         val validMoves = mutableListOf<Square>()
-        for (row in 0..7) {
-            for (col in 0..7) {
-                val to = Square(row, col)
-                if (from != to && isValidMove(piece, from, to)) {
-                    validMoves.add(to)
-                }
-            }
-        }
         
+        // FIRST: Add castling moves (these are special exceptions to normal piece movement)
         // Add castling moves for king if applicable
         if (piece.type == PieceType.KING) {
             val isWhite = piece.color == PieceColor.WHITE
@@ -719,13 +836,51 @@ class ChessGame {
             
             // King must be on starting square (e1/e8)
             if (from.row == kingRow && from.col == 4) {
-                // Check kingside castling (O-O): king moves to g1/g8
+                // Check kingside castling (O-O): king moves to g1/g8 (col 6)
                 if (isCastlingPossible(piece, true)) {
                     validMoves.add(Square(kingRow, 6))
                 }
-                // Check queenside castling (O-O-O): king moves to c1/c8
+                // Check queenside castling (O-O-O): king moves to c1/c8 (col 2)
                 if (isCastlingPossible(piece, false)) {
                     validMoves.add(Square(kingRow, 2))
+                }
+            }
+        }
+        
+        // Add castling moves for rook if applicable
+        // When rook is selected, show where the KING will move to (castling destination)
+        if (piece.type == PieceType.ROOK) {
+            val isWhite = piece.color == PieceColor.WHITE
+            val kingRow = if (isWhite) 7 else 0
+            
+            // Rook must be on back rank
+            if (from.row == kingRow) {
+                // Find the king
+                val kingSquare = Square(kingRow, 4)
+                val king = board[kingSquare.row][kingSquare.col]
+                if (king != null && king.type == PieceType.KING && king.color == piece.color) {
+                    // Kingside castling: rook on h1/h8 (col 7), show castling destination g1/g8 (col 6)
+                    // This is where the KING moves to, not the rook
+                    if (from.col == 7 && isCastlingPossible(king, true)) {
+                        validMoves.add(Square(kingRow, 6))
+                    }
+                    // Queenside castling: rook on a1/a8 (col 0), tap a1/a8 (col 0) to castle
+                    // Show the rook's own square as the castling destination
+                    if (from.col == 0 && isCastlingPossible(king, false)) {
+                        validMoves.add(Square(kingRow, 0))
+                    }
+                }
+            }
+        }
+        
+        // THEN: Add normal piece moves
+        for (row in 0..7) {
+            for (col in 0..7) {
+                val to = Square(row, col)
+                // Skip if it's the same square or already added as castling move
+                if (from == to || validMoves.contains(to)) continue
+                if (isValidMove(piece, from, to)) {
+                    validMoves.add(to)
                 }
             }
         }

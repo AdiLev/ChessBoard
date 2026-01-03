@@ -26,6 +26,7 @@ class ChessBoardView @JvmOverloads constructor(
     private var squareSize = 0f
     private var selectedSquare: Square? = null
     private var possibleMoves = mutableListOf<Square>()
+    private var castlingKingSquare: Square? = null // Highlight king when rook selected for castling
     private var game: ChessGame? = null
 
     private val lightSquarePaint = Paint().apply {
@@ -198,6 +199,13 @@ class ChessBoardView @JvmOverloads constructor(
                         selectedPiecePaint.strokeWidth = 3f
                         selectedPiecePaint.color = Color.parseColor("#FFD700") // Gold
                         canvas.drawText(piece.getUnicodeSymbol(), x, y, selectedPiecePaint)
+                    } else if (castlingKingSquare?.row == row && castlingKingSquare?.col == col) {
+                        // Highlight king when rook is selected for castling
+                        val radius = squareSize * 0.45f
+                        canvas.drawCircle(x, y - piecePaint.textSize / 3, radius, selectedPieceBackgroundPaint)
+                        // Draw piece with highlight color
+                        val paint = if (piece.color == PieceColor.WHITE) whitePiecePaint else blackPiecePaint
+                        canvas.drawText(piece.getUnicodeSymbol(), x, y, paint)
                     } else {
                         // Draw piece normally with appropriate color
                         val paint = if (piece.color == PieceColor.WHITE) whitePiecePaint else blackPiecePaint
@@ -234,6 +242,26 @@ class ChessBoardView @JvmOverloads constructor(
                         selectedSquare = square
                         // Calculate valid moves for this piece
                         possibleMoves = game?.getValidMovesForPiece(square)?.toMutableList() ?: mutableListOf()
+                        
+                        // If rook is selected, check if castling is possible and highlight king
+                        castlingKingSquare = null
+                        if (piece.type == PieceType.ROOK) {
+                            val isWhite = piece.color == PieceColor.WHITE
+                            val kingRow = if (isWhite) 7 else 0
+                            if (square.row == kingRow) {
+                                val kingSquare = Square(kingRow, 4)
+                                val king = game?.getPieceAt(kingRow, 4)
+                                if (king != null && king.type == PieceType.KING && king.color == piece.color) {
+                                    // Check if castling destination is in valid moves (means castling is possible)
+                                    val isKingside = square.col == 7
+                                    val castlingDest = if (isKingside) Square(kingRow, 6) else Square(kingRow, 2)
+                                    if (possibleMoves.contains(castlingDest)) {
+                                        castlingKingSquare = kingSquare
+                                    }
+                                }
+                            }
+                        }
+                        
                         invalidate()
                         performClick()
                         return true
@@ -249,6 +277,7 @@ class ChessBoardView @JvmOverloads constructor(
                         // Clicked same square - deselect
                         selectedSquare = null
                         possibleMoves.clear()
+                        castlingKingSquare = null
                         invalidate()
                         performClick()
                         return true
@@ -266,6 +295,7 @@ class ChessBoardView @JvmOverloads constructor(
     fun clearSelection() {
         selectedSquare = null
         possibleMoves.clear()
+        castlingKingSquare = null
         invalidate()
     }
 

@@ -85,6 +85,10 @@ class MainActivity : AppCompatActivity() {
                     // Keep selection for promotion
                     showPromotionDialog(result.from, result.to, result.piece)
                 }
+                is MoveResult.CastlingConfirmationRequired -> {
+                    // Show confirmation dialog for castling
+                    showCastlingConfirmationDialog(result.from, result.to, result.piece, result.isKingside)
+                }
                 is MoveResult.Invalid -> {
                     // Play beep sound for illegal move
                     toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 200)
@@ -92,6 +96,71 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+    
+    private fun showCastlingConfirmationDialog(from: Square, to: Square, piece: ChessPiece, isKingside: Boolean) {
+        val castlingType = if (isKingside) "O-O (Kingside)" else "O-O-O (Queenside)"
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Castling")
+            .setMessage("Do you want to castle? ($castlingType)")
+            .setPositiveButton("Yes") { _, _ ->
+                // Execute castling
+                when (val result = game.executeCastling(from, to, isKingside)) {
+                    is MoveResult.Success -> {
+                        chessBoardView.clearSelection()
+                        updateUI()
+                    }
+                    is MoveResult.Invalid -> {
+                        toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 200)
+                        chessBoardView.clearSelection()
+                    }
+                    else -> {
+                        chessBoardView.clearSelection()
+                    }
+                }
+            }
+            .setNegativeButton("No") { _, _ ->
+                // User declined castling - try normal move validation
+                // Keep the selection and try the move as a normal piece move
+                val normalMoveResult = game.tryNormalMove(from, to)
+                when (normalMoveResult) {
+                    is MoveResult.Success -> {
+                        chessBoardView.clearSelection()
+                        updateUI()
+                    }
+                    is MoveResult.PromotionRequired -> {
+                        showPromotionDialog(normalMoveResult.from, normalMoveResult.to, normalMoveResult.piece)
+                    }
+                    is MoveResult.Invalid -> {
+                        toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 200)
+                        // Keep selection so user can try another move
+                    }
+                    else -> {
+                        chessBoardView.clearSelection()
+                    }
+                }
+            }
+            .setCancelable(true)
+            .setOnCancelListener {
+                // User cancelled - try normal move validation
+                val normalMoveResult = game.tryNormalMove(from, to)
+                when (normalMoveResult) {
+                    is MoveResult.Success -> {
+                        chessBoardView.clearSelection()
+                        updateUI()
+                    }
+                    is MoveResult.PromotionRequired -> {
+                        showPromotionDialog(normalMoveResult.from, normalMoveResult.to, normalMoveResult.piece)
+                    }
+                    is MoveResult.Invalid -> {
+                        chessBoardView.clearSelection()
+                    }
+                    else -> {
+                        chessBoardView.clearSelection()
+                    }
+                }
+            }
+            .show()
     }
     
     private fun showPromotionDialog(from: Square, to: Square, piece: ChessPiece) {
