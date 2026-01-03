@@ -10,37 +10,46 @@
         android:id="@+id/titleText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Choose Promotion Piece"
+        android:text="Pawn Promotion"
         android:textColor="#FFFFFFFF"
-        android:textSize="18sp"
+        android:textSize="20sp"
         android:textStyle="bold"
         android:gravity="center"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="12dp" />
 
     <TextView
         android:id="@+id/subtitleText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Select a piece from your captured pieces"
+        android:text="Select a captured piece to promote your pawn"
         android:textColor="#FFCCCCCC"
         android:textSize="14sp"
         android:gravity="center"
         android:layout_marginBottom="24dp" />
 
-    <LinearLayout
-        android:id="@+id/piecesContainer"
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="16dp">
+        
+        <LinearLayout
+            android:id="@+id/piecesContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:padding="8dp" />
+    </ScrollView>
 
     <Button
         android:id="@+id/btnCancel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Cancel"
-        android:layout_marginTop="8dp" />
+        android:textColor="#FFFFFFFF"
+        android:backgroundTint="#FF666666"
+        android:layout_marginTop="8dp"
+        android:padding="12dp" />
 
 </LinearLayout>
 

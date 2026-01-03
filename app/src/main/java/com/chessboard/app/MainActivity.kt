@@ -97,21 +97,21 @@ class MainActivity : AppCompatActivity() {
     private fun showPromotionDialog(from: Square, to: Square, piece: ChessPiece) {
         val capturedPieces = game.getCapturedPieces(piece.color)
         
-        // If no captured pieces, show standard promotion options as fallback
-        val piecesToShow = if (capturedPieces.isEmpty()) {
-            listOf(
-                ChessPiece(PieceType.QUEEN, piece.color),
-                ChessPiece(PieceType.ROOK, piece.color),
-                ChessPiece(PieceType.BISHOP, piece.color),
-                ChessPiece(PieceType.KNIGHT, piece.color)
-            )
-        } else {
-            capturedPieces
+        // Only show captured pieces - no fallback to standard pieces
+        if (capturedPieces.isEmpty()) {
+            // If no captured pieces, show message and cancel the move
+            android.widget.Toast.makeText(
+                this,
+                "No captured pieces available. Cannot promote pawn.",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+            chessBoardView.clearSelection()
+            return
         }
         
         val dialog = PromotionDialog(
             this,
-            piecesToShow,
+            capturedPieces,
             piece.color,
             onPieceSelected = { promotionType ->
                 // Complete the promotion
@@ -124,12 +124,14 @@ class MainActivity : AppCompatActivity() {
                     else -> {
                         // Handle error - promotion failed
                         toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 200)
+                        chessBoardView.clearSelection()
                     }
                 }
             },
             onCancel = {
                 // User cancelled - the pawn move is not completed, so nothing happens
                 // The pawn remains in its original position
+                chessBoardView.clearSelection()
             }
         )
         dialog.show()

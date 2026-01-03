@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.Paint
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
@@ -40,24 +41,17 @@ class PromotionDialog(
         val piecesContainer = findViewById<LinearLayout>(R.id.piecesContainer)
         val btnCancel = findViewById<Button>(R.id.btnCancel)
 
-        // Get unique piece types from captured pieces
-        val availableTypes = capturedPieces.map { it.type }.distinct()
+        titleText.text = "Pawn Promotion"
+        subtitleText.text = "Select a captured piece type to promote your pawn"
+        subtitleText.setTextColor(Color.parseColor("#FFCCCCCC"))
         
-        if (availableTypes.isEmpty()) {
-            subtitleText.text = "No captured pieces available. Using standard promotion options."
-            subtitleText.setTextColor(Color.parseColor("#FFFFD93D"))
-            // Show standard promotion options (queen, rook, bishop, knight)
-            listOf(PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP, PieceType.KNIGHT).forEach { pieceType ->
-                val button = createPieceButton(pieceType)
-                piecesContainer.addView(button)
-            }
-        } else {
-            subtitleText.text = "Select a piece from your captured pieces"
-            // Create buttons for each available piece type
-            availableTypes.forEach { pieceType ->
-                val button = createPieceButton(pieceType)
-                piecesContainer.addView(button)
-            }
+        // Show unique piece types from captured pieces
+        // Each type can be selected multiple times for different pawn promotions
+        val availableTypes = capturedPieces.map { it.type }.distinct()
+        availableTypes.forEachIndexed { index, pieceType ->
+            val piece = ChessPiece(pieceType, pieceColor)
+            val pieceView = createPieceView(piece, index)
+            piecesContainer.addView(pieceView)
         }
 
         btnCancel.setOnClickListener {
@@ -66,29 +60,73 @@ class PromotionDialog(
         }
     }
 
-    private fun createPieceButton(pieceType: PieceType): Button {
-        val button = Button(context)
+    private fun createPieceView(piece: ChessPiece, index: Int): View {
+        // Create a custom view that looks like a chess square with piece (like on the board)
+        val container = LinearLayout(context)
+        container.orientation = LinearLayout.VERTICAL
+        container.gravity = Gravity.CENTER
+        
         val layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
-        layoutParams.setMargins(8, 0, 8, 0)
-        button.layoutParams = layoutParams
+        layoutParams.setMargins(12, 8, 12, 8)
+        container.layoutParams = layoutParams
         
-        // Create a temporary piece to get the unicode symbol
-        val tempPiece = ChessPiece(pieceType, pieceColor)
-        button.text = tempPiece.getUnicodeSymbol()
-        button.textSize = 32f
-        button.setPadding(24)
-        button.minWidth = 120
-        button.minHeight = 120
+        // Create square background (like chess board) - alternate colors
+        val squareView = View(context)
+        val squareSize = 120 // pixels
+        val squareParams = LinearLayout.LayoutParams(squareSize, squareSize)
+        squareView.layoutParams = squareParams
         
-        button.setOnClickListener {
-            onPieceSelected(pieceType)
+        // Alternate between light and dark squares for visual appeal
+        val isLight = (index % 2 == 0)
+        squareView.setBackgroundColor(
+            if (isLight) Color.parseColor("#F0D9B5") 
+            else Color.parseColor("#B58863")
+        )
+        
+        // Create piece text view (styled like on the board)
+        val pieceText = TextView(context)
+        pieceText.text = piece.getUnicodeSymbol()
+        pieceText.textSize = 48f
+        pieceText.gravity = Gravity.CENTER
+        pieceText.setTextColor(if (piece.color == PieceColor.WHITE) Color.WHITE else Color.BLACK)
+        
+        // Add text view on top of square using FrameLayout
+        val frameLayout = android.widget.FrameLayout(context)
+        frameLayout.layoutParams = LinearLayout.LayoutParams(squareSize, squareSize)
+        frameLayout.addView(squareView)
+        frameLayout.addView(pieceText)
+        
+        // Make clickable with ripple effect
+        frameLayout.isClickable = true
+        frameLayout.isFocusable = true
+        frameLayout.setOnClickListener {
+            onPieceSelected(piece.type)
             dismiss()
         }
         
-        return button
+        // Add border for better visual separation
+        frameLayout.setBackgroundResource(android.R.drawable.dialog_holo_light_frame)
+        
+        container.addView(frameLayout)
+        
+        // Add piece type label below
+        val labelText = TextView(context)
+        labelText.text = piece.type.name.lowercase().replaceFirstChar { it.uppercase() }
+        labelText.textSize = 12f
+        labelText.setTextColor(Color.parseColor("#FFCCCCCC"))
+        labelText.gravity = Gravity.CENTER
+        labelText.layoutParams = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            setMargins(0, 4, 0, 0)
+        }
+        container.addView(labelText)
+        
+        return container
     }
 }
 
