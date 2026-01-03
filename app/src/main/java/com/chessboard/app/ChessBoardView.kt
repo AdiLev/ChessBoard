@@ -73,13 +73,27 @@ class ChessBoardView @JvmOverloads constructor(
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        val size = Math.min(measuredWidth, measuredHeight)
+        val widthMode = MeasureSpec.getMode(widthMeasureSpec)
+        val widthSize = MeasureSpec.getSize(widthMeasureSpec)
+        val heightMode = MeasureSpec.getMode(heightMeasureSpec)
+        val heightSize = MeasureSpec.getSize(heightMeasureSpec)
+        
+        // Make it square based on width, but respect height constraints
+        val size = when {
+            widthMode == MeasureSpec.EXACTLY -> {
+                val maxHeight = if (heightMode == MeasureSpec.EXACTLY) heightSize else Int.MAX_VALUE
+                Math.min(widthSize, maxHeight)
+            }
+            heightMode == MeasureSpec.EXACTLY -> heightSize
+            else -> Math.min(widthSize, heightSize)
+        }
+        
         setMeasuredDimension(size, size)
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
+        // Use the smaller dimension to ensure square board
         boardSize = Math.min(w, h)
         squareSize = boardSize / 8f
         piecePaint.textSize = squareSize * 0.7f

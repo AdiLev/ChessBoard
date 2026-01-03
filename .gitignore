@@ -78,6 +78,10 @@ fastlane/readme.md
 # Version control
 vcs.xml
 
+# Auto-commit scripts (keep these in git)
+# !auto-commit.ps1
+# !auto-commit-with-push.ps1
+
 # lint
 lint/intermediates/
 lint/generated/
