@@ -211,8 +211,9 @@ class MainActivity : AppCompatActivity() {
         isFullscreen = !isFullscreen
         
         if (isFullscreen) {
-            // Enter fullscreen: hide controls, show only board
+            // Enter fullscreen: hide controls and action bar, show only board
             controlsContainer.visibility = android.view.View.GONE
+            supportActionBar?.hide() // Hide action bar in fullscreen
             btnFullscreen.setCompoundDrawablesWithIntrinsicBounds(
                 0,
                 R.drawable.ic_fullscreen_exit,
@@ -224,8 +225,9 @@ class MainActivity : AppCompatActivity() {
             boardContainer.layoutParams.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT
             boardContainer.layoutParams = boardContainer.layoutParams
         } else {
-            // Exit fullscreen: show controls, restore normal layout
+            // Exit fullscreen: show controls and action bar, restore normal layout
             controlsContainer.visibility = android.view.View.VISIBLE
+            supportActionBar?.show() // Show action bar when exiting fullscreen
             btnFullscreen.setCompoundDrawablesWithIntrinsicBounds(
                 0,
                 R.drawable.ic_fullscreen,
