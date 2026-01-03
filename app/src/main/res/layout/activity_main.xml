@@ -7,6 +7,7 @@
     android:gravity="center_horizontal">
 
     <FrameLayout
+        android:id="@+id/boardContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -20,58 +21,78 @@
             android:layout_gravity="center"
             android:minWidth="200dp"
             android:minHeight="200dp" />
+        
+        <Button
+            android:id="@+id/btnFullscreen"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="8dp"
+            android:drawableTop="@drawable/ic_fullscreen"
+            android:drawablePadding="4dp"
+            android:text=""
+            android:backgroundTint="#80000000"
+            android:contentDescription="Fullscreen"
+            android:clickable="true"
+            android:focusable="true" />
     </FrameLayout>
 
     <LinearLayout
+        android:id="@+id/controlsContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginTop="@dimen/spacing_medium">
+        android:orientation="vertical">
         
-        <TextView
-            android:id="@+id/moveNumberText"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Move: 0"
-            android:textSize="@dimen/text_size_large"
-            android:layout_marginEnd="@dimen/spacing_medium" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="@dimen/spacing_medium">
+            
+            <TextView
+                android:id="@+id/moveNumberText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Move: 0"
+                android:textSize="@dimen/text_size_large"
+                android:layout_marginEnd="@dimen/spacing_medium" />
+
+            <TextView
+                android:id="@+id/totalMovesText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="/ 0"
+                android:textSize="@dimen/text_size_large" />
+        </LinearLayout>
+
+        <SeekBar
+            android:id="@+id/moveSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="0"
+            android:progress="0"
+            android:layout_marginTop="@dimen/spacing_small"
+            android:layout_marginBottom="@dimen/spacing_small" />
 
         <TextView
-            android:id="@+id/totalMovesText"
-            android:layout_width="wrap_content"
+            android:id="@+id/moveHistoryText"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="/ 0"
-            android:textSize="@dimen/text_size_large" />
-    </LinearLayout>
+            android:text="Move History:"
+            android:textSize="@dimen/text_size_medium"
+            android:layout_marginTop="@dimen/spacing_small"
+            android:maxLines="3"
+            android:scrollbars="vertical"
+            android:minHeight="40dp" />
 
-    <SeekBar
-        android:id="@+id/moveSeekBar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:max="0"
-        android:progress="0"
-        android:layout_marginTop="@dimen/spacing_small"
-        android:layout_marginBottom="@dimen/spacing_small" />
-
-    <TextView
-        android:id="@+id/moveHistoryText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Move History:"
-        android:textSize="@dimen/text_size_medium"
-        android:layout_marginTop="@dimen/spacing_small"
-        android:maxLines="3"
-        android:scrollbars="vertical"
-        android:minHeight="40dp" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="@dimen/spacing_medium"
-        android:padding="@dimen/spacing_small"
-        android:gravity="center_vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="@dimen/spacing_medium"
+            android:padding="@dimen/spacing_small"
+            android:gravity="center_vertical">
 
         <Button
             android:id="@+id/btnNewGame"
@@ -165,6 +186,7 @@
             android:contentDescription="Last move"
             android:clickable="true"
             android:focusable="true" />
+        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>

@@ -21,11 +21,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnNext: Button
     private lateinit var btnLast: Button
     private lateinit var btnNewGame: Button
+    private lateinit var btnFullscreen: Button
+    private lateinit var boardContainer: android.widget.FrameLayout
+    private lateinit var controlsContainer: android.widget.LinearLayout
 
     private val game = ChessGame()
     private val handler = Handler(Looper.getMainLooper())
     private var autoPlayRunnable: Runnable? = null
     private var isSeeking = false
+    private var isFullscreen = false
     private val toneGenerator = ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 100)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,6 +57,9 @@ class MainActivity : AppCompatActivity() {
         btnNext = findViewById(R.id.btnNext)
         btnLast = findViewById(R.id.btnLast)
         btnNewGame = findViewById(R.id.btnNewGame)
+        btnFullscreen = findViewById(R.id.btnFullscreen)
+        boardContainer = findViewById(R.id.boardContainer)
+        controlsContainer = findViewById(R.id.controlsContainer)
         
         // Ensure all buttons are enabled and clickable
         btnNewGame.isEnabled = true
@@ -61,6 +68,7 @@ class MainActivity : AppCompatActivity() {
         btnPauseResume.isEnabled = true
         btnNext.isEnabled = true
         btnLast.isEnabled = true
+        btnFullscreen.isEnabled = true
         chessBoardView.isEnabled = true
     }
 
@@ -191,6 +199,45 @@ class MainActivity : AppCompatActivity() {
             chessBoardView.clearSelection()
             game.newGame()
             updateUI()
+        }
+        
+        // Fullscreen button
+        btnFullscreen.setOnClickListener {
+            toggleFullscreen()
+        }
+    }
+    
+    private fun toggleFullscreen() {
+        isFullscreen = !isFullscreen
+        
+        if (isFullscreen) {
+            // Enter fullscreen: hide controls, show only board
+            controlsContainer.visibility = android.view.View.GONE
+            btnFullscreen.setCompoundDrawablesWithIntrinsicBounds(
+                0,
+                R.drawable.ic_fullscreen_exit,
+                0,
+                0
+            )
+            btnFullscreen.contentDescription = "Exit fullscreen"
+            // Make board container fill entire screen
+            boardContainer.layoutParams.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            boardContainer.layoutParams = boardContainer.layoutParams
+        } else {
+            // Exit fullscreen: show controls, restore normal layout
+            controlsContainer.visibility = android.view.View.VISIBLE
+            btnFullscreen.setCompoundDrawablesWithIntrinsicBounds(
+                0,
+                R.drawable.ic_fullscreen,
+                0,
+                0
+            )
+            btnFullscreen.contentDescription = "Fullscreen"
+            // Restore board container to weighted layout
+            val params = boardContainer.layoutParams as android.widget.LinearLayout.LayoutParams
+            params.height = 0
+            params.weight = 1f
+            boardContainer.layoutParams = params
         }
     }
 
