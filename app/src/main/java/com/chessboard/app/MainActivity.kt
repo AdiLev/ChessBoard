@@ -20,7 +20,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnNext: Button
     private lateinit var btnLast: Button
     private lateinit var btnNewGame: Button
-    private lateinit var btnReset: Button
 
     private val game = ChessGame()
     private val handler = Handler(Looper.getMainLooper())
@@ -49,7 +48,6 @@ class MainActivity : AppCompatActivity() {
         btnNext = findViewById(R.id.btnNext)
         btnLast = findViewById(R.id.btnLast)
         btnNewGame = findViewById(R.id.btnNewGame)
-        btnReset = findViewById(R.id.btnReset)
     }
 
     private fun setupChessBoard() {
@@ -167,13 +165,6 @@ class MainActivity : AppCompatActivity() {
             game.newGame()
             updateUI()
         }
-
-        // Reset button
-        btnReset.setOnClickListener {
-            pauseAutoPlay()
-            game.reset()
-            updateUI()
-        }
     }
 
     private fun updateUI() {
@@ -203,12 +194,13 @@ class MainActivity : AppCompatActivity() {
         }
         moveHistoryText.text = historyText
 
-        // Update pause/resume button
-        btnPauseResume.text = if (game.isPaused()) {
-            getString(R.string.resume)
-        } else {
-            getString(R.string.pause)
-        }
+        // Update pause/resume button icon
+        btnPauseResume.setCompoundDrawablesWithIntrinsicBounds(
+            0,
+            if (game.isPaused()) R.drawable.ic_play else R.drawable.ic_pause,
+            0,
+            0
+        )
     }
 
     private fun pauseAutoPlay() {
