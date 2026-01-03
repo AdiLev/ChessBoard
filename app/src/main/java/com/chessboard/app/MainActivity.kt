@@ -86,8 +86,8 @@ class MainActivity : AppCompatActivity() {
                     showPromotionDialog(result.from, result.to, result.piece)
                 }
                 is MoveResult.CastlingConfirmationRequired -> {
-                    // Show confirmation dialog for castling
-                    showCastlingConfirmationDialog(result.from, result.to, result.piece, result.isKingside)
+                    // Show confirmation dialog for castling (from king-initiated castling)
+                    showCastlingConfirmationDialog(result.from, result.to, result.piece, result.isKingside, null)
                 }
                 is MoveResult.Invalid -> {
                     // Play beep sound for illegal move
@@ -96,16 +96,29 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        
+        // Set callback for when rook on edge is selected (castling check)
+        chessBoardView.onCastlingCheckListener = { rookSquare, rook, isKingside ->
+            val isWhite = rook.color == PieceColor.WHITE
+            val kingRow = if (isWhite) 7 else 0
+            val kingSquare = Square(kingRow, 4)
+            val king = game.getPieceAt(kingRow, 4)
+            if (king != null && king.type == PieceType.KING) {
+                // King goes to the edge: g1/g8 for kingside, a1/a8 for queenside
+                val kingDestination = if (isKingside) Square(kingRow, 6) else Square(kingRow, 0)
+                showCastlingConfirmationDialog(kingSquare, kingDestination, king, isKingside, rookSquare)
+            }
+        }
     }
     
-    private fun showCastlingConfirmationDialog(from: Square, to: Square, piece: ChessPiece, isKingside: Boolean) {
+    private fun showCastlingConfirmationDialog(kingFrom: Square, kingTo: Square, king: ChessPiece, isKingside: Boolean, rookSquare: Square?) {
         val castlingType = if (isKingside) "O-O (Kingside)" else "O-O-O (Queenside)"
         android.app.AlertDialog.Builder(this)
             .setTitle("Castling")
             .setMessage("Do you want to castle? ($castlingType)")
             .setPositiveButton("Yes") { _, _ ->
-                // Execute castling
-                when (val result = game.executeCastling(from, to, isKingside)) {
+                // Execute castling immediately - castling happens automatically
+                when (val result = game.executeCastling(kingFrom, kingTo, isKingside)) {
                     is MoveResult.Success -> {
                         chessBoardView.clearSelection()
                         updateUI()
@@ -120,45 +133,13 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("No") { _, _ ->
-                // User declined castling - try normal move validation
-                // Keep the selection and try the move as a normal piece move
-                val normalMoveResult = game.tryNormalMove(from, to)
-                when (normalMoveResult) {
-                    is MoveResult.Success -> {
-                        chessBoardView.clearSelection()
-                        updateUI()
-                    }
-                    is MoveResult.PromotionRequired -> {
-                        showPromotionDialog(normalMoveResult.from, normalMoveResult.to, normalMoveResult.piece)
-                    }
-                    is MoveResult.Invalid -> {
-                        toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 200)
-                        // Keep selection so user can try another move
-                    }
-                    else -> {
-                        chessBoardView.clearSelection()
-                    }
-                }
+                // User declined castling - clear selection and allow normal moves
+                chessBoardView.clearSelection()
             }
             .setCancelable(true)
             .setOnCancelListener {
-                // User cancelled - try normal move validation
-                val normalMoveResult = game.tryNormalMove(from, to)
-                when (normalMoveResult) {
-                    is MoveResult.Success -> {
-                        chessBoardView.clearSelection()
-                        updateUI()
-                    }
-                    is MoveResult.PromotionRequired -> {
-                        showPromotionDialog(normalMoveResult.from, normalMoveResult.to, normalMoveResult.piece)
-                    }
-                    is MoveResult.Invalid -> {
-                        chessBoardView.clearSelection()
-                    }
-                    else -> {
-                        chessBoardView.clearSelection()
-                    }
-                }
+                // User cancelled - clear selection
+                chessBoardView.clearSelection()
             }
             .show()
     }

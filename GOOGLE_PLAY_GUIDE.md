@@ -126,3 +126,4 @@ gradlew assembleRelease
 jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore chessboard-release-key.jks app-release-unsigned.apk chessboard-key
 ```
 
+

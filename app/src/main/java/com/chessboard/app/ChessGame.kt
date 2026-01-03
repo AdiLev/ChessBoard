@@ -366,13 +366,17 @@ class ChessGame {
             if (to.row == kingRow && to.col == 6) {
                 return isCastlingPossible(piece, true) // true = kingside
             }
-            // Queenside castling: king moves to c1/c8 (col 2)
-            if (to.row == kingRow && to.col == 2) {
+            // Queenside castling: king moves to a1/a8 (col 0) - edge square
+            if (to.row == kingRow && to.col == 0) {
                 return isCastlingPossible(piece, false) // false = queenside
             }
         }
         
         return false
+    }
+    
+    fun isCastlingPossibleForRook(king: ChessPiece, kingside: Boolean): Boolean {
+        return isCastlingPossible(king, kingside)
     }
     
     private fun isCastlingPossible(piece: ChessPiece, kingside: Boolean): Boolean {
@@ -430,10 +434,15 @@ class ChessGame {
                 return false
             }
             // Check if squares the king passes through are under attack
+            // King moves from e1/e8 (col 4) to a1/a8 (col 0), passing through d1/d8 (col 3), c1/c8 (col 2), b1/b8 (col 1)
             val intermediateSquare1 = Square(kingRow, 3)
             val intermediateSquare2 = Square(kingRow, 2)
+            val intermediateSquare3 = Square(kingRow, 1)
+            val kingDestination = Square(kingRow, 0)  // King goes to edge: a1/a8
             if (isSquareUnderAttack(intermediateSquare1, piece.color) || 
-                isSquareUnderAttack(intermediateSquare2, piece.color)) {
+                isSquareUnderAttack(intermediateSquare2, piece.color) ||
+                isSquareUnderAttack(intermediateSquare3, piece.color) ||
+                isSquareUnderAttack(kingDestination, piece.color)) {
                 return false
             }
         }
@@ -489,12 +498,12 @@ class ChessGame {
             }
         }
         
-        // Queenside castling: rook is on a1/a8 (col 0), tap a1/a8 (col 0) to castle
+        // Queenside castling: rook is on a1/a8 (col 0), king moves to a1/a8 (col 0) - edge square
         // User selects rook and taps the rook's square to execute queenside castling
         if (rookFrom.col == 0 && to.row == kingRow && to.col == 0 && rookFrom != to) {
             // Check if castling is possible
             if (isCastlingPossible(king, false)) {
-                return CastlingInfo(kingSquare, Square(kingRow, 2), king, false)
+                return CastlingInfo(kingSquare, Square(kingRow, 0), king, false)
             }
         }
         
@@ -616,10 +625,12 @@ class ChessGame {
         }
         
         // Execute castling: move king and rook
-        board[to.row][to.col] = piece
-        board[from.row][from.col] = null
+        // IMPORTANT: Clear original positions first, then place pieces
+        // King moves to the edge: g1/g8 (col 6)
+        board[from.row][from.col] = null  // Clear king's original position first
+        board[rookSquare.row][rookSquare.col] = null  // Clear rook's original position
+        board[to.row][to.col] = piece  // Place king at destination
         board[kingRow][5] = rook  // Rook moves to f1/f8
-        board[rookSquare.row][rookSquare.col] = null
         
         // Mark pieces as moved
         if (isWhite) {
@@ -682,23 +693,25 @@ class ChessGame {
         }
         
         // Check if squares the king passes through are under attack
+        // King moves from e1/e8 (col 4) to a1/a8 (col 0), passing through d1/d8 (col 3), c1/c8 (col 2), b1/b8 (col 1)
         val intermediateSquare1 = Square(kingRow, 3)
         val intermediateSquare2 = Square(kingRow, 2)
+        val intermediateSquare3 = Square(kingRow, 1)
+        val kingDestination = Square(kingRow, 0)  // King goes to edge: a1/a8
         if (isSquareUnderAttack(intermediateSquare1, piece.color) || 
-            isSquareUnderAttack(intermediateSquare2, piece.color)) {
-            return null
-        }
-        
-        // Check if destination square is under attack
-        if (isSquareUnderAttack(to, piece.color)) {
+            isSquareUnderAttack(intermediateSquare2, piece.color) ||
+            isSquareUnderAttack(intermediateSquare3, piece.color) ||
+            isSquareUnderAttack(kingDestination, piece.color)) {
             return null
         }
         
         // Execute castling: move king and rook
-        board[to.row][to.col] = piece
-        board[from.row][from.col] = null
+        // IMPORTANT: Clear rook square first, then move pieces
+        // King moves to the edge: a1/a8 (col 0)
+        board[from.row][from.col] = null  // Clear king's original position first
+        board[rookSquare.row][rookSquare.col] = null  // Clear rook's original position
+        board[kingDestination.row][kingDestination.col] = piece  // Place king at destination
         board[kingRow][3] = rook  // Rook moves to d1/d8
-        board[rookSquare.row][rookSquare.col] = null
         
         // Mark pieces as moved
         if (isWhite) {
@@ -711,7 +724,7 @@ class ChessGame {
         
         val move = ChessMove(
             from = from,
-            to = to,
+            to = kingDestination,  // King goes to edge: a1/a8
             piece = piece,
             capturedPiece = null,
             isPromotion = false,
@@ -840,9 +853,9 @@ class ChessGame {
                 if (isCastlingPossible(piece, true)) {
                     validMoves.add(Square(kingRow, 6))
                 }
-                // Check queenside castling (O-O-O): king moves to c1/c8 (col 2)
+                // Check queenside castling (O-O-O): king moves to a1/a8 (col 0) - edge
                 if (isCastlingPossible(piece, false)) {
-                    validMoves.add(Square(kingRow, 2))
+                    validMoves.add(Square(kingRow, 0))
                 }
             }
         }

@@ -101,3 +101,4 @@ app\build\outputs\apk\debug\ChessBoard-debug.apk
 
 This project is for personal/educational use.
 
+

@@ -28,6 +28,9 @@ class ChessBoardView @JvmOverloads constructor(
     private var possibleMoves = mutableListOf<Square>()
     private var castlingKingSquare: Square? = null // Highlight king when rook selected for castling
     private var game: ChessGame? = null
+    
+    // Callback for when castling should be confirmed (rook selected on edge)
+    var onCastlingCheckListener: ((Square, ChessPiece, Boolean) -> Unit)? = null
 
     private val lightSquarePaint = Paint().apply {
         color = Color.parseColor("#F0D9B5")
@@ -243,7 +246,7 @@ class ChessBoardView @JvmOverloads constructor(
                         // Calculate valid moves for this piece
                         possibleMoves = game?.getValidMovesForPiece(square)?.toMutableList() ?: mutableListOf()
                         
-                        // If rook is selected, check if castling is possible and highlight king
+                        // If rook is selected on edge, check if castling is possible
                         castlingKingSquare = null
                         if (piece.type == PieceType.ROOK) {
                             val isWhite = piece.color == PieceColor.WHITE
@@ -252,11 +255,34 @@ class ChessBoardView @JvmOverloads constructor(
                                 val kingSquare = Square(kingRow, 4)
                                 val king = game?.getPieceAt(kingRow, 4)
                                 if (king != null && king.type == PieceType.KING && king.color == piece.color) {
-                                    // Check if castling destination is in valid moves (means castling is possible)
                                     val isKingside = square.col == 7
-                                    val castlingDest = if (isKingside) Square(kingRow, 6) else Square(kingRow, 2)
-                                    if (possibleMoves.contains(castlingDest)) {
+                                    val isQueenside = square.col == 0
+                                    
+                                    // Check if castling is possible
+                                    val castlingPossible = if (isKingside) {
+                                        game?.let { g ->
+                                            val kingPiece = g.getPieceAt(kingRow, 4)
+                                            kingPiece != null && g.isCastlingPossibleForRook(kingPiece, true)
+                                        } ?: false
+                                    } else if (isQueenside) {
+                                        game?.let { g ->
+                                            val kingPiece = g.getPieceAt(kingRow, 4)
+                                            kingPiece != null && g.isCastlingPossibleForRook(kingPiece, false)
+                                        } ?: false
+                                    } else {
+                                        false
+                                    }
+                                    
+                                    if (castlingPossible) {
                                         castlingKingSquare = kingSquare
+                                        // Immediately show castling confirmation dialog
+                                        // If user confirms, castling will execute automatically
+                                        onCastlingCheckListener?.invoke(square, piece, isKingside)
+                                        // Clear selection temporarily - will be restored if user says "No"
+                                        selectedSquare = null
+                                        possibleMoves.clear()
+                                        invalidate()
+                                        return true
                                     }
                                 }
                             }
