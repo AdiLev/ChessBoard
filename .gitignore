@@ -92,5 +92,5 @@ lint/tmp/
 *.hprof
 
 # OpenJDK (if you want to exclude it)
-# openJdk-*/
+openJdk-*/
 
