@@ -4,7 +4,45 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="@dimen/spacing_medium"
-    android:gravity="center_horizontal">
+    android:gravity="center_horizontal"
+    android:layoutDirection="ltr">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="@dimen/spacing_small"
+        android:layoutDirection="ltr">
+        
+        <Button
+            android:id="@+id/btnSave"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginRight="@dimen/spacing_small"
+            android:text="Save"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#4CAF50"
+            android:padding="@dimen/spacing_medium"
+            android:textSize="@dimen/text_size_medium"
+            android:clickable="true"
+            android:focusable="true" />
+        
+        <Button
+            android:id="@+id/btnLoad"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginLeft="@dimen/spacing_small"
+            android:text="Load"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#2196F3"
+            android:padding="@dimen/spacing_medium"
+            android:textSize="@dimen/text_size_medium"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
 
     <FrameLayout
         android:id="@+id/boardContainer"
@@ -26,7 +64,7 @@
             android:id="@+id/btnFullscreen"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:layout_gravity="top|end"
+            android:layout_gravity="top|right"
             android:layout_margin="8dp"
             android:drawableTop="@drawable/ic_fullscreen"
             android:drawablePadding="4dp"
@@ -48,7 +86,8 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginTop="@dimen/spacing_medium">
+            android:layout_marginTop="@dimen/spacing_medium"
+            android:layoutDirection="ltr">
             
             <TextView
                 android:id="@+id/moveNumberText"
@@ -56,7 +95,7 @@
                 android:layout_height="wrap_content"
                 android:text="Move: 0"
                 android:textSize="@dimen/text_size_large"
-                android:layout_marginEnd="@dimen/spacing_medium" />
+                android:layout_marginRight="@dimen/spacing_medium" />
 
             <TextView
                 android:id="@+id/totalMovesText"
@@ -92,21 +131,22 @@
             android:orientation="horizontal"
             android:layout_marginTop="@dimen/spacing_medium"
             android:padding="@dimen/spacing_small"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:layoutDirection="ltr">
 
         <Button
             android:id="@+id/btnNewGame"
             android:layout_width="wrap_content"
             android:layout_height="@dimen/button_height"
-            android:layout_marginEnd="@dimen/spacing_medium"
+            android:layout_marginRight="@dimen/spacing_medium"
             android:minWidth="@dimen/button_min_width"
-            android:drawableStart="@drawable/ic_new_game"
+            android:drawableLeft="@drawable/ic_new_game"
             android:drawablePadding="@dimen/button_padding"
             android:text="New Game"
             android:textColor="@android:color/white"
             android:backgroundTint="#9C27B0"
-            android:paddingStart="@dimen/spacing_large"
-            android:paddingEnd="@dimen/spacing_large"
+            android:paddingLeft="@dimen/spacing_large"
+            android:paddingRight="@dimen/spacing_large"
             android:textSize="@dimen/text_size_medium"
             android:clickable="true"
             android:focusable="true"
@@ -122,7 +162,7 @@
             android:drawablePadding="@dimen/spacing_small"
             android:text=""
             android:backgroundTint="#4CAF50"
-            android:layout_marginEnd="@dimen/button_margin"
+            android:layout_marginRight="@dimen/button_margin"
             android:contentDescription="First move"
             android:clickable="true"
             android:focusable="true" />
@@ -137,7 +177,7 @@
             android:drawablePadding="@dimen/spacing_small"
             android:text=""
             android:backgroundTint="#2196F3"
-            android:layout_marginEnd="@dimen/button_margin"
+            android:layout_marginRight="@dimen/button_margin"
             android:contentDescription="Previous move"
             android:clickable="true"
             android:focusable="true" />
@@ -152,7 +192,7 @@
             android:drawablePadding="@dimen/spacing_small"
             android:text=""
             android:backgroundTint="#FF9800"
-            android:layout_marginEnd="@dimen/button_margin"
+            android:layout_marginRight="@dimen/button_margin"
             android:contentDescription="Play/Pause autoplay"
             android:clickable="true"
             android:focusable="true"
@@ -168,7 +208,7 @@
             android:drawablePadding="@dimen/spacing_small"
             android:text=""
             android:backgroundTint="#2196F3"
-            android:layout_marginEnd="@dimen/button_margin"
+            android:layout_marginRight="@dimen/button_margin"
             android:contentDescription="Next move"
             android:clickable="true"
             android:focusable="true" />

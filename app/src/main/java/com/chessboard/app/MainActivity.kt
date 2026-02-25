@@ -7,7 +7,14 @@ import android.os.Looper
 import android.widget.Button
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+import java.io.FileWriter
+import java.io.BufferedReader
+import java.io.FileReader
 
 class MainActivity : AppCompatActivity() {
     private lateinit var chessBoardView: ChessBoardView
@@ -22,6 +29,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnLast: Button
     private lateinit var btnNewGame: Button
     private lateinit var btnFullscreen: Button
+    private lateinit var btnSave: Button
+    private lateinit var btnLoad: Button
     private lateinit var boardContainer: android.widget.FrameLayout
     private lateinit var controlsContainer: android.widget.LinearLayout
 
@@ -58,6 +67,8 @@ class MainActivity : AppCompatActivity() {
         btnLast = findViewById(R.id.btnLast)
         btnNewGame = findViewById(R.id.btnNewGame)
         btnFullscreen = findViewById(R.id.btnFullscreen)
+        btnSave = findViewById(R.id.btnSave)
+        btnLoad = findViewById(R.id.btnLoad)
         boardContainer = findViewById(R.id.boardContainer)
         controlsContainer = findViewById(R.id.controlsContainer)
         
@@ -69,6 +80,8 @@ class MainActivity : AppCompatActivity() {
         btnNext.isEnabled = true
         btnLast.isEnabled = true
         btnFullscreen.isEnabled = true
+        btnSave.isEnabled = true
+        btnLoad.isEnabled = true
         chessBoardView.isEnabled = true
     }
 
@@ -266,6 +279,196 @@ class MainActivity : AppCompatActivity() {
         // Fullscreen button
         btnFullscreen.setOnClickListener {
             toggleFullscreen()
+        }
+        
+        // Save button
+        btnSave.setOnClickListener {
+            saveGame()
+        }
+        
+        // Load button
+        btnLoad.setOnClickListener {
+            loadGame()
+        }
+    }
+    
+    private fun saveGame() {
+        try {
+            val gameData = JSONObject()
+            
+            // Save move history
+            val movesArray = JSONArray()
+            game.getMoveHistory().forEach { move ->
+                val moveObj = JSONObject()
+                moveObj.put("fromRow", move.from.row)
+                moveObj.put("fromCol", move.from.col)
+                moveObj.put("toRow", move.to.row)
+                moveObj.put("toCol", move.to.col)
+                moveObj.put("pieceType", move.piece.type.name)
+                moveObj.put("pieceColor", move.piece.color.name)
+                moveObj.put("capturedPieceType", move.capturedPiece?.type?.name)
+                moveObj.put("capturedPieceColor", move.capturedPiece?.color?.name)
+                moveObj.put("isPromotion", move.isPromotion)
+                moveObj.put("promotionType", move.promotionType?.name)
+                moveObj.put("isCastling", move.isCastling)
+                moveObj.put("isEnPassant", move.isEnPassant)
+                moveObj.put("moveNumber", move.moveNumber)
+                movesArray.put(moveObj)
+            }
+            gameData.put("moves", movesArray)
+            
+            // Save current state
+            gameData.put("currentMoveIndex", game.getCurrentMoveIndex())
+            gameData.put("isWhiteTurn", game.getIsWhiteTurn())
+            
+            // Save castling flags
+            val castlingFlags = JSONObject()
+            game.getCastlingFlags().forEach { (key, value) ->
+                castlingFlags.put(key, value)
+            }
+            gameData.put("castlingFlags", castlingFlags)
+            
+            // Save captured pieces
+            val (whiteCaptured, blackCaptured) = game.getCapturedPieces()
+            val whiteCapturedArray = JSONArray()
+            whiteCaptured.forEach { piece ->
+                val pieceObj = JSONObject()
+                pieceObj.put("type", piece.type.name)
+                pieceObj.put("color", piece.color.name)
+                whiteCapturedArray.put(pieceObj)
+            }
+            gameData.put("whiteCaptured", whiteCapturedArray)
+            
+            val blackCapturedArray = JSONArray()
+            blackCaptured.forEach { piece ->
+                val pieceObj = JSONObject()
+                pieceObj.put("type", piece.type.name)
+                pieceObj.put("color", piece.color.name)
+                blackCapturedArray.put(pieceObj)
+            }
+            gameData.put("blackCaptured", blackCapturedArray)
+            
+            // Save to file
+            val fileName = "chess_game_${System.currentTimeMillis()}.chb"
+            val file = File(getExternalFilesDir(null), fileName)
+            FileWriter(file).use { writer ->
+                writer.write(gameData.toString())
+            }
+            
+            Toast.makeText(this, "Game saved: $fileName", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error saving game: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+    
+    private fun loadGame() {
+        try {
+            val filesDir = getExternalFilesDir(null)
+            if (filesDir == null || !filesDir.exists()) {
+                Toast.makeText(this, "No saved games found", Toast.LENGTH_SHORT).show()
+                return
+            }
+            
+            // Get all CHB files
+            val chbFiles = filesDir.listFiles { _, name -> name.endsWith(".chb") }
+            if (chbFiles == null || chbFiles.isEmpty()) {
+                Toast.makeText(this, "No saved games found", Toast.LENGTH_SHORT).show()
+                return
+            }
+            
+            // Use the most recent file
+            val latestFile = chbFiles.maxByOrNull { it.lastModified() }
+            if (latestFile == null) {
+                Toast.makeText(this, "No saved games found", Toast.LENGTH_SHORT).show()
+                return
+            }
+            
+            // Read file
+            val jsonString = BufferedReader(FileReader(latestFile)).use { it.readText() }
+            val gameData = JSONObject(jsonString)
+            
+            // Parse moves
+            val movesArray = gameData.getJSONArray("moves")
+            val moves = mutableListOf<ChessMove>()
+            for (i in 0 until movesArray.length()) {
+                val moveObj = movesArray.getJSONObject(i)
+                val from = Square(moveObj.getInt("fromRow"), moveObj.getInt("fromCol"))
+                val to = Square(moveObj.getInt("toRow"), moveObj.getInt("toCol"))
+                val pieceType = PieceType.valueOf(moveObj.getString("pieceType"))
+                val pieceColor = PieceColor.valueOf(moveObj.getString("pieceColor"))
+                val piece = ChessPiece(pieceType, pieceColor)
+                
+                val capturedPiece = if (!moveObj.isNull("capturedPieceType")) {
+                    val capturedType = PieceType.valueOf(moveObj.getString("capturedPieceType"))
+                    val capturedColor = PieceColor.valueOf(moveObj.getString("capturedPieceColor"))
+                    ChessPiece(capturedType, capturedColor)
+                } else {
+                    null
+                }
+                
+                val promotionType = if (!moveObj.isNull("promotionType")) {
+                    PieceType.valueOf(moveObj.getString("promotionType"))
+                } else {
+                    null
+                }
+                
+                val move = ChessMove(
+                    from = from,
+                    to = to,
+                    piece = piece,
+                    capturedPiece = capturedPiece,
+                    isPromotion = moveObj.getBoolean("isPromotion"),
+                    promotionType = promotionType,
+                    isCastling = moveObj.getBoolean("isCastling"),
+                    isEnPassant = moveObj.getBoolean("isEnPassant"),
+                    moveNumber = moveObj.getInt("moveNumber")
+                )
+                moves.add(move)
+            }
+            
+            // Parse current state
+            val currentMoveIndex = gameData.getInt("currentMoveIndex")
+            val isWhiteTurn = gameData.getBoolean("isWhiteTurn")
+            
+            // Parse castling flags
+            val castlingFlagsObj = gameData.getJSONObject("castlingFlags")
+            val castlingFlags = mutableMapOf<String, Boolean>()
+            castlingFlags["whiteKingMoved"] = castlingFlagsObj.getBoolean("whiteKingMoved")
+            castlingFlags["whiteKingsideRookMoved"] = castlingFlagsObj.getBoolean("whiteKingsideRookMoved")
+            castlingFlags["whiteQueensideRookMoved"] = castlingFlagsObj.getBoolean("whiteQueensideRookMoved")
+            castlingFlags["blackKingMoved"] = castlingFlagsObj.getBoolean("blackKingMoved")
+            castlingFlags["blackKingsideRookMoved"] = castlingFlagsObj.getBoolean("blackKingsideRookMoved")
+            castlingFlags["blackQueensideRookMoved"] = castlingFlagsObj.getBoolean("blackQueensideRookMoved")
+            
+            // Parse captured pieces
+            val whiteCapturedArray = gameData.getJSONArray("whiteCaptured")
+            val whiteCaptured = mutableListOf<ChessPiece>()
+            for (i in 0 until whiteCapturedArray.length()) {
+                val pieceObj = whiteCapturedArray.getJSONObject(i)
+                val type = PieceType.valueOf(pieceObj.getString("type"))
+                val color = PieceColor.valueOf(pieceObj.getString("color"))
+                whiteCaptured.add(ChessPiece(type, color))
+            }
+            
+            val blackCapturedArray = gameData.getJSONArray("blackCaptured")
+            val blackCaptured = mutableListOf<ChessPiece>()
+            for (i in 0 until blackCapturedArray.length()) {
+                val pieceObj = blackCapturedArray.getJSONObject(i)
+                val type = PieceType.valueOf(pieceObj.getString("type"))
+                val color = PieceColor.valueOf(pieceObj.getString("color"))
+                blackCaptured.add(ChessPiece(type, color))
+            }
+            
+            // Load game state
+            pauseAutoPlay()
+            chessBoardView.clearSelection()
+            game.loadGameState(moves, currentMoveIndex, isWhiteTurn, castlingFlags, whiteCaptured, blackCaptured)
+            chessBoardView.setGame(game)
+            updateUI()
+            
+            Toast.makeText(this, "Game loaded: ${latestFile.name}", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error loading game: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
     

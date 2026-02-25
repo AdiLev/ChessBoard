@@ -1023,5 +1023,62 @@ class ChessGame {
     fun newGame() {
         initializeBoard()
     }
+    
+    // Save/Load functionality
+    fun getIsWhiteTurn(): Boolean = isWhiteTurn
+    
+    fun getCastlingFlags(): Map<String, Boolean> {
+        return mapOf(
+            "whiteKingMoved" to whiteKingMoved,
+            "whiteKingsideRookMoved" to whiteKingsideRookMoved,
+            "whiteQueensideRookMoved" to whiteQueensideRookMoved,
+            "blackKingMoved" to blackKingMoved,
+            "blackKingsideRookMoved" to blackKingsideRookMoved,
+            "blackQueensideRookMoved" to blackQueensideRookMoved
+        )
+    }
+    
+    fun getCapturedPieces(): Pair<List<ChessPiece>, List<ChessPiece>> {
+        return Pair(whiteCapturedPieces.toList(), blackCapturedPieces.toList())
+    }
+    
+    fun loadGameState(
+        moves: List<ChessMove>,
+        currentIndex: Int,
+        isWhiteTurn: Boolean,
+        castlingFlags: Map<String, Boolean>,
+        whiteCaptured: List<ChessPiece>,
+        blackCaptured: List<ChessPiece>
+    ) {
+        // Reset board
+        resetBoardOnly()
+        
+        // Restore castling flags
+        whiteKingMoved = castlingFlags["whiteKingMoved"] ?: false
+        whiteKingsideRookMoved = castlingFlags["whiteKingsideRookMoved"] ?: false
+        whiteQueensideRookMoved = castlingFlags["whiteQueensideRookMoved"] ?: false
+        blackKingMoved = castlingFlags["blackKingMoved"] ?: false
+        blackKingsideRookMoved = castlingFlags["blackKingsideRookMoved"] ?: false
+        blackQueensideRookMoved = castlingFlags["blackQueensideRookMoved"] ?: false
+        
+        // Restore captured pieces
+        whiteCapturedPieces.clear()
+        whiteCapturedPieces.addAll(whiteCaptured)
+        blackCapturedPieces.clear()
+        blackCapturedPieces.addAll(blackCaptured)
+        
+        // Restore move history
+        moveHistory.clear()
+        moveHistory.addAll(moves)
+        
+        // Restore current position
+        this.isWhiteTurn = isWhiteTurn
+        this.currentMoveIndex = currentIndex
+        
+        // Replay moves to restore board state
+        if (currentIndex >= 0) {
+            goToMove(currentIndex)
+        }
+    }
 }
 
