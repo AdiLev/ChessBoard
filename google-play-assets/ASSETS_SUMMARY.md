@@ -8,11 +8,14 @@
 - **Status:** ✅ Ready for upload
 - **Location:** `google-play-assets/icon/app-icon-512x512.png`
 
-### Feature Graphic
-- **File:** `feature-graphic/feature-graphic-1024x500.png`
-- **Size:** 1024x500 pixels
-- **Status:** ✅ Ready for upload
-- **Location:** `google-play-assets/feature-graphic/feature-graphic-1024x500.png`
+### Feature Graphics
+- **File 1:** `feature-graphic/feature-graphic-1024x1024.png`
+  - **Size:** 1024x1024 pixels
+  - **Status:** ✅ Ready for upload
+- **File 2:** `feature-graphic/feature-graphic-1024x500.png`
+  - **Size:** 1024x500 pixels (Google Play Store standard)
+  - **Status:** ✅ Ready for upload
+- **Location:** `google-play-assets/feature-graphic/`
 
 ## ⚠️ Required: Screenshots
 
@@ -40,6 +43,7 @@
 Before uploading to Google Play Console:
 
 - [x] App icon (512x512) - `icon/app-icon-512x512.png`
+- [x] Feature graphic (1024x1024) - `feature-graphic/feature-graphic-1024x1024.png`
 - [x] Feature graphic (1024x500) - `feature-graphic/feature-graphic-1024x500.png`
 - [ ] Screenshot 1 - Main board
 - [ ] Screenshot 2 - Move history
@@ -53,7 +57,8 @@ Before uploading to Google Play Console:
 
 2. **Feature Graphic:**
    - Play Console > Store listing > Feature graphic
-   - Upload: `feature-graphic/feature-graphic-1024x500.png`
+   - Upload: `feature-graphic/feature-graphic-1024x500.png` (standard Play Store format)
+   - Or use: `feature-graphic/feature-graphic-1024x1024.png` (square format, if preferred)
 
 3. **Screenshots:**
    - Play Console > Store listing > Screenshots
@@ -63,7 +68,8 @@ Before uploading to Google Play Console:
 ## File Sizes
 
 - App Icon: ~168 KB
-- Feature Graphic: ~75 KB
+- Feature Graphic (1024x1024): ~137 KB
+- Feature Graphic (1024x500): ~77 KB
 - Screenshots: Varies (typically 200KB - 2MB each)
 
 All assets are optimized PNG files ready for Google Play Store submission.

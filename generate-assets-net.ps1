@@ -65,29 +65,29 @@ try {
     $icon512.Dispose()
     Write-Host "Created: $iconDir\app-icon-512x512.png" -ForegroundColor Green
     
-    # Generate feature graphic (1024x500)
-    Write-Host "`nGenerating feature graphic (1024x500)..." -ForegroundColor Cyan
-    $featureGraphic = New-Object System.Drawing.Bitmap(1024, 500)
+    # Generate feature graphic (1024x1024)
+    Write-Host "`nGenerating feature graphic (1024x1024)..." -ForegroundColor Cyan
+    $featureGraphic = New-Object System.Drawing.Bitmap(1024, 1024)
     $featureGraphics = [System.Drawing.Graphics]::FromImage($featureGraphic)
     $featureGraphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
     $featureGraphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
     
     # Background color (from icon description: #6B8492)
     $bgBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(107, 132, 146))
-    $featureGraphics.FillRectangle($bgBrush, 0, 0, 1024, 500)
+    $featureGraphics.FillRectangle($bgBrush, 0, 0, 1024, 1024)
     
-    # Draw icon in center (scaled to ~300x300)
-    $iconScale = 300.0 / [Math]::Max($sourceImage.Width, $sourceImage.Height)
+    # Draw icon in center (scaled to ~400x400)
+    $iconScale = 400.0 / [Math]::Max($sourceImage.Width, $sourceImage.Height)
     $iconWidth = [int]($sourceImage.Width * $iconScale)
     $iconHeight = [int]($sourceImage.Height * $iconScale)
     $iconX = (1024 - $iconWidth) / 2
-    $iconY = (500 - $iconHeight) / 2 - 40  # Slightly above center for text below
+    $iconY = (1024 - $iconHeight) / 2 - 80  # Slightly above center for text below
     
     $featureGraphics.DrawImage($sourceImage, $iconX, $iconY, $iconWidth, $iconHeight)
     
     # Add text
-    $titleFont = New-Object System.Drawing.Font("Arial", 48, [System.Drawing.FontStyle]::Bold)
-    $taglineFont = New-Object System.Drawing.Font("Arial", 24, [System.Drawing.FontStyle]::Regular)
+    $titleFont = New-Object System.Drawing.Font("Arial", 64, [System.Drawing.FontStyle]::Bold)
+    $taglineFont = New-Object System.Drawing.Font("Arial", 32, [System.Drawing.FontStyle]::Regular)
     $textBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
     
     $titleText = "ChessBoard"
@@ -99,15 +99,62 @@ try {
     
     # Draw title
     $titleX = (1024 - $titleSize.Width) / 2
-    $titleY = 500 - 120
+    $titleY = 1024 - 180
     $featureGraphics.DrawString($titleText, $titleFont, $textBrush, $titleX, $titleY)
     
     # Draw tagline
     $taglineX = (1024 - $taglineSize.Width) / 2
-    $taglineY = 500 - 60
+    $taglineY = 1024 - 100
     $featureGraphics.DrawString($taglineText, $taglineFont, $textBrush, $taglineX, $taglineY)
     
-    $featureGraphic.Save("$featureDir\feature-graphic-1024x500.png", [System.Drawing.Imaging.ImageFormat]::Png)
+    $featureGraphic.Save("$featureDir\feature-graphic-1024x1024.png", [System.Drawing.Imaging.ImageFormat]::Png)
+    
+    # Also generate the standard 1024x500 for Play Store
+    Write-Host "`nGenerating feature graphic (1024x500) for Play Store..." -ForegroundColor Cyan
+    $featureGraphic500 = New-Object System.Drawing.Bitmap(1024, 500)
+    $featureGraphics500 = [System.Drawing.Graphics]::FromImage($featureGraphic500)
+    $featureGraphics500.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+    $featureGraphics500.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+    
+    $bgBrush500 = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(107, 132, 146))
+    $featureGraphics500.FillRectangle($bgBrush500, 0, 0, 1024, 500)
+    
+    # Draw icon in center (scaled to ~300x300)
+    $iconScale500 = 300.0 / [Math]::Max($sourceImage.Width, $sourceImage.Height)
+    $iconWidth500 = [int]($sourceImage.Width * $iconScale500)
+    $iconHeight500 = [int]($sourceImage.Height * $iconScale500)
+    $iconX500 = (1024 - $iconWidth500) / 2
+    $iconY500 = (500 - $iconHeight500) / 2 - 40
+    
+    $featureGraphics500.DrawImage($sourceImage, $iconX500, $iconY500, $iconWidth500, $iconHeight500)
+    
+    # Add text
+    $titleFont500 = New-Object System.Drawing.Font("Arial", 48, [System.Drawing.FontStyle]::Bold)
+    $taglineFont500 = New-Object System.Drawing.Font("Arial", 24, [System.Drawing.FontStyle]::Regular)
+    $textBrush500 = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
+    
+    $titleSize500 = $featureGraphics500.MeasureString($titleText, $titleFont500)
+    $taglineSize500 = $featureGraphics500.MeasureString($taglineText, $taglineFont500)
+    
+    # Draw title
+    $titleX500 = (1024 - $titleSize500.Width) / 2
+    $titleY500 = 500 - 120
+    $featureGraphics500.DrawString($titleText, $titleFont500, $textBrush500, $titleX500, $titleY500)
+    
+    # Draw tagline
+    $taglineX500 = (1024 - $taglineSize500.Width) / 2
+    $taglineY500 = 500 - 60
+    $featureGraphics500.DrawString($taglineText, $taglineFont500, $textBrush500, $taglineX500, $taglineY500)
+    
+    $featureGraphic500.Save("$featureDir\feature-graphic-1024x500.png", [System.Drawing.Imaging.ImageFormat]::Png)
+    
+    # Cleanup 500 version
+    $titleFont500.Dispose()
+    $taglineFont500.Dispose()
+    $textBrush500.Dispose()
+    $bgBrush500.Dispose()
+    $featureGraphics500.Dispose()
+    $featureGraphic500.Dispose()
     
     # Cleanup
     $titleFont.Dispose()
@@ -117,6 +164,7 @@ try {
     $featureGraphics.Dispose()
     $featureGraphic.Dispose()
     
+    Write-Host "Created: $featureDir\feature-graphic-1024x1024.png" -ForegroundColor Green
     Write-Host "Created: $featureDir\feature-graphic-1024x500.png" -ForegroundColor Green
     
     # Cleanup source image
@@ -125,6 +173,7 @@ try {
     Write-Host "`n=== Asset Generation Complete ===" -ForegroundColor Green
     Write-Host "`nAssets created:" -ForegroundColor Cyan
     Write-Host "  - App Icon (512x512): $iconDir\app-icon-512x512.png" -ForegroundColor Yellow
+    Write-Host "  - Feature Graphic (1024x1024): $featureDir\feature-graphic-1024x1024.png" -ForegroundColor Yellow
     Write-Host "  - Feature Graphic (1024x500): $featureDir\feature-graphic-1024x500.png" -ForegroundColor Yellow
     Write-Host "`nNote: Screenshots need to be taken manually from the running app." -ForegroundColor Yellow
     
