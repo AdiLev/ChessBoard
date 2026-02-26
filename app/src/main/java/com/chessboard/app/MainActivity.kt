@@ -294,6 +294,44 @@ class MainActivity : AppCompatActivity() {
     
     private fun saveGame() {
         try {
+            val filesDir = getExternalFilesDir(null)
+            if (filesDir == null || !filesDir.exists()) {
+                Toast.makeText(this, "Error accessing storage", Toast.LENGTH_SHORT).show()
+                return
+            }
+            
+            // Get existing CHB files for reference
+            val existingFiles = filesDir.listFiles { _, name -> name.endsWith(".chb") }?.map { it.name } ?: emptyList()
+            
+            // Show dialog to enter filename
+            val input = android.widget.EditText(this)
+            input.hint = "Enter filename (without .chb)"
+            val defaultName = "chess_game_${System.currentTimeMillis()}"
+            input.setText(defaultName)
+            input.selectAll()
+            
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Save Game")
+                .setMessage("Enter filename:")
+                .setView(input)
+                .setPositiveButton("Save") { _, _ ->
+                    val fileName = input.text.toString().trim()
+                    if (fileName.isEmpty()) {
+                        Toast.makeText(this, "Filename cannot be empty", Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
+                    val finalFileName = if (fileName.endsWith(".chb")) fileName else "$fileName.chb"
+                    saveGameToFile(finalFileName)
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+    
+    private fun saveGameToFile(fileName: String) {
+        try {
             val gameData = JSONObject()
             
             // Save move history
@@ -349,7 +387,6 @@ class MainActivity : AppCompatActivity() {
             gameData.put("blackCaptured", blackCapturedArray)
             
             // Save to file
-            val fileName = "chess_game_${System.currentTimeMillis()}.chb"
             val file = File(getExternalFilesDir(null), fileName)
             FileWriter(file).use { writer ->
                 writer.write(gameData.toString())
@@ -376,15 +413,28 @@ class MainActivity : AppCompatActivity() {
                 return
             }
             
-            // Use the most recent file
-            val latestFile = chbFiles.maxByOrNull { it.lastModified() }
-            if (latestFile == null) {
-                Toast.makeText(this, "No saved games found", Toast.LENGTH_SHORT).show()
-                return
-            }
+            // Sort files by modification date (newest first)
+            val sortedFiles = chbFiles.sortedByDescending { it.lastModified() }
+            val fileNames = sortedFiles.map { it.name }.toTypedArray()
             
+            // Show dialog to select file
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Load Game")
+                .setItems(fileNames) { _, which ->
+                    val selectedFile = sortedFiles[which]
+                    loadGameFromFile(selectedFile)
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+    
+    private fun loadGameFromFile(file: File) {
+        try {
             // Read file
-            val jsonString = BufferedReader(FileReader(latestFile)).use { it.readText() }
+            val jsonString = BufferedReader(FileReader(file)).use { it.readText() }
             val gameData = JSONObject(jsonString)
             
             // Parse moves
@@ -466,7 +516,7 @@ class MainActivity : AppCompatActivity() {
             chessBoardView.setGame(game)
             updateUI()
             
-            Toast.makeText(this, "Game loaded: ${latestFile.name}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Game loaded: ${file.name}", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Error loading game: ${e.message}", Toast.LENGTH_LONG).show()
         }
