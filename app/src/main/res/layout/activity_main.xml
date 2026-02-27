@@ -35,11 +35,28 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginLeft="@dimen/spacing_small"
+            android:layout_marginRight="@dimen/spacing_small"
             android:text="Load"
             android:textColor="@android:color/white"
             android:backgroundTint="#2196F3"
             android:padding="@dimen/spacing_medium"
             android:textSize="@dimen/text_size_medium"
+            android:clickable="true"
+            android:focusable="true" />
+        
+        <Button
+            android:id="@+id/btnFullscreen"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/spacing_small"
+            android:drawableTop="@drawable/ic_fullscreen"
+            android:drawablePadding="4dp"
+            android:text=""
+            android:backgroundTint="#80000000"
+            android:contentDescription="Fullscreen"
+            android:padding="@dimen/spacing_medium"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
             android:clickable="true"
             android:focusable="true" />
     </LinearLayout>
@@ -59,23 +76,6 @@
             android:layout_gravity="center"
             android:minWidth="200dp"
             android:minHeight="200dp" />
-        
-        <Button
-            android:id="@+id/btnFullscreen"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_gravity="top|right"
-            android:layout_marginTop="4dp"
-            android:layout_marginRight="8dp"
-            android:layout_marginBottom="8dp"
-            android:layout_marginLeft="8dp"
-            android:drawableTop="@drawable/ic_fullscreen"
-            android:drawablePadding="4dp"
-            android:text=""
-            android:backgroundTint="#80000000"
-            android:contentDescription="Fullscreen"
-            android:clickable="true"
-            android:focusable="true" />
     </FrameLayout>
 
     <LinearLayout
